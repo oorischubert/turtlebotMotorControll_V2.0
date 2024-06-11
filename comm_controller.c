@@ -28,7 +28,6 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
       if (comm->RxData[2] == VELOCITY_MODE) {
           memcpy(&vehicle->left_front_motor.desired_velocity, &comm->RxData[3], 4);
           memcpy(&vehicle->right_front_motor.desired_velocity, &comm->RxData[7], 4);
-          //memcpy(&vehicle->desired_state.velocity.angular, &comm->RxData[11], 4);
       }
     }
     else {
@@ -43,12 +42,12 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
 
 
 
-void ProcessDataToSend(CommController *comm, const Vehicle *vehicle, const) {
+void ProcessDataToSend(CommController *comm, const Vehicle *vehicle) {
     comm->TxData[0] = HEADER;
     comm->TxData[1] = HEADER;
 
-    memcpy(&comm->TxData[2], &readEncoder(vehicle->left_front_motor.encoder), 4);
-    memcpy(&comm->TxData[6], &readEncoder(vehicle->right_front_motor.encoder), 4);
+    memcpy(&comm->TxData[2], readEncoder(&vehicle->left_front_motor.encoder), 4);
+    memcpy(&comm->TxData[6], readEncoder(&vehicle->right_front_motor.encoder), 4);
     memcpy(&comm->TxData[10], &vehicle->current_state.velocity.x, 4);
     memcpy(&comm->TxData[14], &vehicle->current_state.velocity.y, 4);
     memcpy(&comm->TxData[18], &vehicle->current_state.velocity.angular, 4);

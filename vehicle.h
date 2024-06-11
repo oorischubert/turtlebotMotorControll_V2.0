@@ -31,6 +31,9 @@ typedef struct {
     VEL_PID velocity_pid_x;
     VEL_PID velocity_pid_y;
     VEL_PID velocity_pid_angular;
+    POS_PID pos_pid_x;
+    POS_PID pos_pid_y;
+    POS_PID pos_pid_angular;
 } Vehicle_PIDs;
 
 
@@ -39,7 +42,10 @@ typedef struct {   //omni wheels version
     float vehicle_length;
     float wheel_diameter;
     float wheel_distance;
-   
+    Odometry desired_state;
+    Odometry current_state;
+    Odometry last_state;
+    Odometry signal_state;  //for storing the control signal being outputed from the pids
     Motor left_front_motor;
     Motor right_front_motor;
     Vehicle_PIDs vehicle_pids;

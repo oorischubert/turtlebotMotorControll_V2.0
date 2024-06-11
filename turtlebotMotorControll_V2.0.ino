@@ -83,9 +83,10 @@ void setup() {
     initVelPID(&vel_pid_angular, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
 
 //     // init PIDs for each motor
-   
+    initPosPID(&pos_pid_left_front_motor, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
     initVelPID(&vel_pid_left_front_motor, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
 
+    initPosPID(&pos_pid_right_front_motor, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
     initVelPID(&vel_pid_right_front_motor, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
 
    //MOD initPosPID(&pos_pid_left_rear_motor, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
@@ -183,8 +184,8 @@ void setup() {
     }
 
 
-    // vehicle.left_front_motor.desired_velocity = 5.0;
-    // vehicle.right_front_motor.desired_velocity = 5.0;
+    //vehicle.left_front_motor.desired_velocity = 0.1; //testing
+    //vehicle.right_front_motor.desired_velocity = 0.1; //testing
     // vehicle.left_rear_motor.desired_velocity = 5.0;
     // vehicle.right_rear_motor.desired_velocity = 5.0;
     // vehicle.desired_state.velocity.y = 0.1;    // 1.0 m/s is the max speed of the vehicle 
@@ -299,11 +300,11 @@ void vehicleControlTask(void * parameter) {
             count_vehicle = 0;
             lastPrintTime = millis();
         }
-        if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-          compute_odometry_from_encoders(vehicle);
-          count_vehicle++;    
-          xSemaphoreGive(MotorVelocityMutex);
-        }
+        // if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
+        //   compute_odometry_from_encoders(vehicle);
+        //   count_vehicle++;    
+        //   xSemaphoreGive(MotorVelocityMutex);
+        // }
         if(xSemaphoreTake(vehicleCurrentStateMutex, portMAX_DELAY)) {
           ProcessDataToSend(&comm, vehicle); 
           // Serial.write(comm.TxData, SIZE_OF_TX_DATA);  // Transmit data     
@@ -345,7 +346,7 @@ void communicationTask(void * parameter) {
             if (check == 2) {
               Serial.flush(); 
               if (xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {  
-                  translate_twist_to_motor_commands(vehicle);
+                  //translate_twist_to_motor_commands(vehicle);
                   xSemaphoreGive(MotorUpdateMutex);
               }
             }

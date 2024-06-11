@@ -14,12 +14,15 @@ typedef enum {
 } ControlMode;
 
 typedef struct {
-
+    float desired_position;
+    float current_position;
+    float last_position;
     float desired_velocity; // Desired velocity
     float current_velocity; // Current velocity based on encoder readings
     ControlMode controlMode;
     L298N l298n;
     Encoder encoder;
+    POS_PID pos_pid;
     VEL_PID vel_pid;
     int ticksPerTurn;
     float wheelDiameter;
@@ -33,7 +36,7 @@ extern "C" {
 #endif
 
 // Function prototypes
-void initMotor(Motor *motor, Encoder enc ,L298N driver, VEL_PID vel_pid ,int direction);
+void initMotor(Motor *motor, Encoder enc ,L298N driver, POS_PID pos_pid, VEL_PID vel_pid ,int direction);
 void computeVelocity(Motor *motor);
 void updateMotor(Motor *motor);
 void motor_step(Motor *motor);
