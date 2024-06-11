@@ -72,7 +72,7 @@
 // communication configuration
 #define SERIAL_BAUDRATE 115200
 #define SIZE_OF_RX_DATA 13  // 2 headrs + type of command + desired lect+right velocities + check sum + tail
-#define SIZE_OF_TX_DATA 24  // 2 headers + encoderCounts + velocities + check sum + tail
+#define SIZE_OF_TX_DATA 20  // 2 headers + 2 encoderCounts + 2 velocities + check sum + tail
 #define HEADER 200
 #define TAIL 199
 

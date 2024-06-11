@@ -85,7 +85,7 @@ void compute_odometry_from_encoders(Vehicle *vehicle) {
     vehicle->last_state = vehicle->current_state;
 }
 
-//deprecated -> done iin ros
+//deprecated -> done in ros2_controll
 void translate_twist_to_motor_commands(Vehicle *vehicle) {
     float r = WHEEL_DIAMETER / 2.0; // Radius of the wheels
     float V = vehicle->desired_state.velocity.x; // Desired linear velocity
