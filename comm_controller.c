@@ -25,15 +25,10 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
     }
     if (comm->RxData[SIZE_OF_RX_DATA - 2] == checksum) {  //passed all integrity checks
       valid_data = 2;
-      if (comm->RxData[2] == POSITION_MODE) {
-          memcpy(&vehicle->desired_state.position.x, &comm->RxData[3], 4);
-          memcpy(&vehicle->desired_state.position.y, &comm->RxData[7], 4);
-          memcpy(&vehicle->desired_state.position.angular, &comm->RxData[11], 4);
-      }
-      else if (comm->RxData[2] == VELOCITY_MODE) {
-          memcpy(&vehicle->desired_state.velocity.x, &comm->RxData[3], 4);
-          memcpy(&vehicle->desired_state.velocity.y, &comm->RxData[7], 4);
-          memcpy(&vehicle->desired_state.velocity.angular, &comm->RxData[11], 4);
+      if (comm->RxData[2] == VELOCITY_MODE) {
+          memcpy(&vehicle->left_front_motor.desired_velocity, &comm->RxData[3], 4);
+          memcpy(&vehicle->right_front_motor.desired_velocity, &comm->RxData[7], 4);
+          //memcpy(&vehicle->desired_state.velocity.angular, &comm->RxData[11], 4);
       }
     }
     else {
@@ -48,33 +43,23 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
 
 
 
-void ProcessDataToSend(CommController *comm, const Vehicle *vehicle) {
+void ProcessDataToSend(CommController *comm, const Vehicle *vehicle, const) {
     comm->TxData[0] = HEADER;
     comm->TxData[1] = HEADER;
 
-    memcpy(&comm->TxData[2], &vehicle->current_state.position.x, 4);
-    memcpy(&comm->TxData[6], &vehicle->current_state.position.y, 4);
-    memcpy(&comm->TxData[10], &vehicle->current_state.position.angular, 4);
-
-    memcpy(&comm->TxData[14], &vehicle->current_state.velocity.x, 4);
-    memcpy(&comm->TxData[18], &vehicle->current_state.velocity.y, 4);
-    memcpy(&comm->TxData[22], &vehicle->current_state.velocity.angular, 4);
-
-    memcpy(&comm->TxData[26], &vehicle->current_state.odometry_variance.position_error.x, 4);
-    memcpy(&comm->TxData[30], &vehicle->current_state.odometry_variance.position_error.y, 4);
-    memcpy(&comm->TxData[34], &vehicle->current_state.odometry_variance.position_error.angular, 4);
-
-    memcpy(&comm->TxData[38], &vehicle->current_state.odometry_variance.velocity_error.x, 4);
-    memcpy(&comm->TxData[42], &vehicle->current_state.odometry_variance.velocity_error.y, 4);
-    memcpy(&comm->TxData[46], &vehicle->current_state.odometry_variance.velocity_error.angular, 4);
+    memcpy(&comm->TxData[2], &readEncoder(vehicle->left_front_motor.encoder), 4);
+    memcpy(&comm->TxData[6], &readEncoder(vehicle->right_front_motor.encoder), 4);
+    memcpy(&comm->TxData[10], &vehicle->current_state.velocity.x, 4);
+    memcpy(&comm->TxData[14], &vehicle->current_state.velocity.y, 4);
+    memcpy(&comm->TxData[18], &vehicle->current_state.velocity.angular, 4);
 
     // Compute checksum
     uint8_t checksum = 0;
-    for (int i = 2; i < 50; i++) {  
+    for (int i = 2; i < 22; i++) {  
         checksum += comm->TxData[i];
     }
-    comm->TxData[50] = checksum;
-    comm->TxData[51] = TAIL;
+    comm->TxData[22] = checksum;
+    comm->TxData[23] = TAIL;
 
     // Send data
    

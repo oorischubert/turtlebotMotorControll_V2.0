@@ -4,7 +4,7 @@
 
 #define ALPHA 0.5 // Example value, adjust based on desired responsiveness vs. smoothness
 
-void initMotor(Motor *motor, Encoder enc ,L298N driver, POS_PID pos_pid, VEL_PID vel_pid ,int direction) {                                  
+void initMotor(Motor *motor, Encoder enc ,L298N driver, VEL_PID vel_pid ,int direction) {                                  
     motor->desired_position = 0;
     motor->current_position = 0;
     motor->desired_velocity = 0;
@@ -51,15 +51,10 @@ void motor_step(Motor *motor) {
     // updateMotor(motor);
     float control_signal = 0;
     switch(motor->controlMode){
-        case POSITION:
-            control_signal = pos_pid_step(&motor->pos_pid, motor->desired_position , motor->current_position);
-            break;
-
         case VELOCITY:
             control_signal = vel_pid_step(&motor->vel_pid, motor->desired_velocity , motor->current_velocity);
             break;
         }
-
     if (control_signal > 0) move_forward(&motor->l298n , control_signal);
     if (control_signal < 0) move_backward(&motor->l298n , -control_signal);
     if (control_signal == 0) stop(&motor->l298n);
