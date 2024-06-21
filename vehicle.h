@@ -36,7 +36,6 @@ typedef struct {
     POS_PID pos_pid_angular;
 } Vehicle_PIDs;
 
-
 typedef struct {   //omni wheels version
     float vehicle_width;
     float vehicle_length;
@@ -49,6 +48,8 @@ typedef struct {   //omni wheels version
     Motor left_front_motor;
     Motor right_front_motor;
     Vehicle_PIDs vehicle_pids;
+    int temp_left_front_motor_vel,
+    int temp_right_front_motor_vel,
 } Vehicle;
 
 #ifdef __cplusplus
@@ -59,7 +60,7 @@ void init_vehicle_pids(Vehicle_PIDs *vehicle_pids , VEL_PID velocity_pid_x ,  VE
 void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_motor, Vehicle_PIDs vehicle_pids);
 void compute_odometry_from_encoders(Vehicle *vehicle);
 // void compute_variance_from_encoders(Vehicle *vehicle);
-void translate_twist_to_motor_commands(Vehicle *vehicle);
+void translate_temp_to_motor_commands(Vehicle *vehicle);
 void vehicle_step(Vehicle *vehicle);
 
 #ifdef __cplusplus

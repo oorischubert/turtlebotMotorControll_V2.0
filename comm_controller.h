@@ -14,8 +14,8 @@ typedef struct {
 } CommController;
 
 typedef enum {
-    POSITION_MODE,
-    VELOCITY_MODE
+    VELOCITY_MODE,
+    ENCODER_RESET
 } DesiredControl;
 
 #ifdef __cplusplus

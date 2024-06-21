@@ -25,9 +25,14 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
         if (comm->RxData[SIZE_OF_RX_DATA - 2] == checksum) {  // Passed all integrity checks
             valid_data = 2;
             if (comm->RxData[2] == VELOCITY_MODE) {
-                memcpy(&vehicle->left_front_motor.desired_velocity, &comm->RxData[3], 4);
-                memcpy(&vehicle->right_front_motor.desired_velocity, &comm->RxData[7], 4);
+                memcpy(&vehicle->temp_left_front_motor_vel, &comm->RxData[3], 4);
+                memcpy(&vehicle->temp_left_front_motor_vel, &comm->RxData[7], 4);
+
+            } else if (comm->RxData[2] == ENCODER_RESET) {
+                resetEncoder(&vehicle->left_front_motor.encoder);
+                resetEncoder(&vehicle->right_front_motor.encoder);
             }
+            
         } else {
             memset(comm->RxData, 0, SIZE_OF_RX_DATA);  // Clear the buffer
         }
@@ -43,8 +48,8 @@ void ProcessDataToSend(CommController *comm, const Vehicle *vehicle) {
     comm->TxData[0] = HEADER;
     comm->TxData[1] = HEADER;
 
-    memcpy(&comm->TxData[2], &vehicle->left_front_motor.current_velocity, 4); //wasreadEncoder(&vehicle->left_front_motor.encoder) using placeholder
-    memcpy(&comm->TxData[6], &vehicle->right_front_motor.current_velocity, 4); //wasreadEncoder(&vehicle->right_front_motor.encoder) using placeholder
+    memcpy(&comm->TxData[2], readEncoder(&vehicle->left_front_motor.encoder), 4); //was readEncoder(&vehicle->left_front_motor.encoder) using placeholder
+    memcpy(&comm->TxData[6], readEncoder(&vehicle->right_front_motor.encoder), 4); //was readEncoder(&vehicle->right_front_motor.encoder) using placeholder
     memcpy(&comm->TxData[10], &vehicle->left_front_motor.current_velocity, 4);
     memcpy(&comm->TxData[14], &vehicle->right_front_motor.current_velocity, 4);
 
