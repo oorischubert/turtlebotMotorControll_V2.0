@@ -9,7 +9,7 @@ ESP32Encoder* createEncoder() {
 
 void attachHalfQuad(ESP32Encoder* encoder, int aPinNumber, int bPinNumber) {
     if(encoder) {
-        encoder->attachHalfQuad(aPinNumber, bPinNumber); //attachQuad -> attachHalfQuad
+        encoder->attachHalfQuad(aPinNumber, bPinNumber);
     }
 }
 

@@ -40,8 +40,6 @@ typedef struct {
 typedef struct {   //omni wheels version
     float vehicle_width;
     float vehicle_length;
-    float wheel_diameter;
-    float wheel_distance;
     Odometry desired_state;
     Odometry current_state;
     Odometry last_state;
@@ -56,7 +54,7 @@ extern "C" {
 #endif
 
 void init_vehicle_pids(Vehicle_PIDs *vehicle_pids , VEL_PID velocity_pid_x ,  VEL_PID velocity_pid_y, VEL_PID velocity_pid_angular , POS_PID pos_pid_x , POS_PID pos_pid_y , POS_PID pos_pid_angular) ;
-void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_motor, Vehicle_PIDs vehicle_pids);
+void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_motor,  Vehicle_PIDs vehicle_pids);
 void compute_odometry_from_encoders(Vehicle *vehicle);
 // void compute_variance_from_encoders(Vehicle *vehicle);
 void translate_twist_to_motor_commands(Vehicle *vehicle);
