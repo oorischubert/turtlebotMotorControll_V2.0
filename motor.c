@@ -23,22 +23,6 @@ void initMotor(Motor *motor, Encoder enc ,L298N driver, POS_PID pos_pid, VEL_PID
 
 }
 
-// void computeVelocity(Motor *motor) {
-//     if (motor->current_position != motor->last_position) {
-//         int64_t currentTime = esp_timer_get_time(); // Get the current time in microseconds
-//         float deltaPosition = motor->current_position - motor->last_position;
-//         int64_t deltaTime = currentTime - motor->lastUpdateTime; // Time difference in microseconds
-//         float dt = deltaTime / 1000000.0; // Convert time difference to seconds
-//         motor->current_velocity = (deltaPosition / dt) * motor->direction;
-//         motor->lastUpdateTime = currentTime;
-//         motor->last_position = motor->current_position;
-//     } 
-//     else {
-//         motor->current_velocity = 0.0; 
-//     }
-// }
-
-
 void computeVelocity(Motor *motor) {
     int64_t currentTime = esp_timer_get_time(); // Get the current time in microseconds
     int64_t deltaTime = currentTime - motor->lastUpdateTime; // Time difference in microseconds
@@ -50,33 +34,23 @@ void computeVelocity(Motor *motor) {
     if (motor->current_position != motor->last_position) {
         float deltaPosition = motor->current_position - motor->last_position;
         float dt = deltaTime / 1000000.0; // Convert time difference to seconds
-        motor->current_velocity = (deltaPosition / dt) * motor->direction;
+        float new_velocity = (deltaPosition / dt) * motor->direction;
+
+        // Update the buffer with the new velocity
+        motor->sum_velocity -= motor->velocity_buffer[motor->velocity_index];
+        motor->velocity_buffer[motor->velocity_index] = new_velocity;
+        motor->sum_velocity += new_velocity;
+        
+        // Update the current velocity with the moving average
+        motor->current_velocity = motor->sum_velocity / SIZE_OF_VELOCITY_BUFFER;
+        
+        // Increment the buffer index and wrap around if necessary
+        motor->velocity_index = (motor->velocity_index + 1) % SIZE_OF_VELOCITY_BUFFER;
+
         motor->last_position = motor->current_position;
         motor->lastUpdateTime = currentTime; // Update the last update time regardless
-    } 
+    }
 }
-
-// void computeVelocity(Motor *motor) {
-//     int64_t currentTime = esp_timer_get_time(); // Get the current time in microseconds
-//     int64_t deltaTime = currentTime - motor->lastUpdateTime; // Time difference in microseconds
-
-//     if (deltaTime > TIMEOUT_MICROSECONDS) {
-//         // Timeout reached, assume motor has stopped
-//         motor->current_velocity = 0.0;
-//     }
-//     if (motor->current_position != motor->last_position) {
-//         float deltaPosition = motor->current_position - motor->last_position;
-//         float dt = deltaTime / 1000000.0; // Convert time difference to seconds
-//         float unfilteredVelocity = (deltaPosition / dt) * motor->direction;
-
-//         // Apply IIR filter
-//         motor->current_velocity = ALPHA * unfilteredVelocity + (1 - ALPHA) * motor->current_velocity;
-
-//         motor->last_position = motor->current_position;
-//     }
-//     motor->lastUpdateTime = currentTime; // Update the last update time regardless
-// }
-
 
 void updateMotor(Motor *motor) {  //updates position and velocity
     // motor->current_position = getEncoderCount(&motor->encoder) * motor->distancePerTick;  //update position

@@ -1,0 +1,32 @@
+{
+    "files.associations": {
+        "__node_handle": "c",
+        "deque": "c",
+        "list": "c",
+        "map": "c",
+        "set": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "*.tcc": "c",
+        "bitset": "c",
+        "format": "c",
+        "istream": "c",
+        "mutex": "c",
+        "ostream": "c",
+        "streambuf": "c",
+        "functional": "c",
+        "boundingsphere": "c",
+        "camera": "c",
+        "geometry": "c",
+        "graphicscontext": "c",
+        "group": "c",
+        "image": "c",
+        "light": "c",
+        "matrixd": "c",
+        "matrixf": "c",
+        "shader": "c",
+        "transform": "c",
+        "userdatacontainer": "c"
+    }
+}

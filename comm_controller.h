@@ -16,7 +16,8 @@ typedef struct {
 typedef enum {
     POSITION_MODE,
     VELOCITY_MODE,
-    ODOMETRY_MODE
+    ODOMETRY_MODE,
+    PID_MODE,
 } DesiredControl;
 
 #ifdef __cplusplus

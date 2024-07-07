@@ -19,16 +19,6 @@ POS_PID pos_pid_right_front_motor;
 
 VEL_PID vel_pid_left_front_motor;
 VEL_PID vel_pid_right_front_motor;
-
-POS_PID pos_pid_x; 
-POS_PID pos_pid_y;
-POS_PID pos_pid_angular;
-
-VEL_PID vel_pid_x;
-VEL_PID vel_pid_y;
-VEL_PID vel_pid_angular;
-
-Vehicle_PIDs vehicle_pids;
 /////////////////////////
 
 // Encoder objects
@@ -63,25 +53,19 @@ SemaphoreHandle_t vehicleDesiredStateMutex;
 SemaphoreHandle_t MotorVelocityMutex;
 SemaphoreHandle_t vehicleCurrentStateMutex;
 SemaphoreHandle_t MotorUpdateMutex;
+SemaphoreHandle_t MotorControlSemaphore;
 /////////////////////////////
+
+esp_timer_handle_t motor_timer;
+
+void IRAM_ATTR onMotorTimer(void* arg) {
+    xSemaphoreGiveFromISR(MotorControlSemaphore, NULL);
+}
 
 
 void setup() {
 
   BaseType_t taskCreated;
-  
-  
-  // init vehicle PIDs
-  initPosPID(&pos_pid_x, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
-  initPosPID(&pos_pid_y, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
-  initPosPID(&pos_pid_angular, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
-
-  initVelPID(&vel_pid_x, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
-  initVelPID(&vel_pid_y, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
-  initVelPID(&vel_pid_angular, VEL_KP, VEL_KI, VEL_KD, VEL_I_WINDUP);
-
-  init_vehicle_pids(&vehicle_pids, vel_pid_x, vel_pid_y, vel_pid_angular, pos_pid_x, pos_pid_y, pos_pid_angular);
-
 
   // init PIDs for each motor
   initPosPID(&pos_pid_left_front_motor, POS_KP, POS_KI, POS_KD, POS_I_WINDUP);
@@ -108,7 +92,7 @@ void setup() {
   
 
   //init vehicle
-  init_vehicle(&vehicle, left_front_motor, right_front_motor, vehicle_pids);
+  init_vehicle(&vehicle, left_front_motor, right_front_motor);
 
 
   //init communication
@@ -121,7 +105,7 @@ void setup() {
   MotorVelocityMutex = xSemaphoreCreateMutex();
   vehicleCurrentStateMutex = xSemaphoreCreateMutex();
   MotorUpdateMutex = xSemaphoreCreateMutex();
-
+  MotorControlSemaphore = xSemaphoreCreateBinary();
 
   // Creating motorControlTask
   taskCreated = xTaskCreatePinnedToCore(
@@ -158,7 +142,6 @@ void setup() {
     Serial.println("VehicleControlTask creation success!");
   }
 
-
   // Creating communicationTask
   taskCreated = xTaskCreatePinnedToCore(
       communicationTask,          // Task function
@@ -174,7 +157,19 @@ void setup() {
   }
   else {
     Serial.println("CommunicationTask creation success!");
-  }   
+  }
+
+   // Create motor timer for MotorControlTask (500 Hz)
+    const esp_timer_create_args_t motor_timer_args = {
+        .callback = &onMotorTimer,
+        .arg = NULL,
+        .name = "motor_timer"
+    };
+    esp_timer_create(&motor_timer_args, &motor_timer);
+    esp_timer_start_periodic(motor_timer, 500); // 500 Hz
+
+    // vehicle.desired_state.velocity.angular = 0.0;
+    // translate_twist_to_motor_commands(&vehicle);   
 }
 
 void loop() {
@@ -182,37 +177,33 @@ void loop() {
 
 /////////////////////////// MOTOR CONTROL TASK ////////////////////////////////
 void motorControlTask(void * parameter) {
-  Vehicle *vehicle = (Vehicle *)parameter;
-  TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(MOTOR_CONTROL_DT * 1000);
-  xLastWakeTime = xTaskGetTickCount();
-  
-  for(;;) {
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    Vehicle *vehicle = (Vehicle *)parameter;
 
-    vehicle->left_front_motor.current_position = readEncoder(&vehicle->left_front_motor.encoder) * vehicle->left_front_motor.distancePerTick;
+    for(;;) {
+        if (xSemaphoreTake(MotorControlSemaphore, portMAX_DELAY)) {
+            vehicle->left_front_motor.current_position = readEncoder(&vehicle->left_front_motor.encoder) * vehicle->left_front_motor.distancePerTick * vehicle->right_front_motor.direction;
     
-    if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-      computeVelocity(&vehicle->left_front_motor);
-      xSemaphoreGive(MotorVelocityMutex);
-    }
-    if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
-      motor_step(&vehicle->left_front_motor);
-      xSemaphoreGive(MotorUpdateMutex);
-    }
-  
-    vehicle->right_front_motor.current_position = readEncoder(&vehicle->right_front_motor.encoder) * vehicle->right_front_motor.distancePerTick;
+            if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
+                computeVelocity(&vehicle->left_front_motor);
+                xSemaphoreGive(MotorVelocityMutex);
+            }
+            if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
+                motor_step(&vehicle->left_front_motor);
+                xSemaphoreGive(MotorUpdateMutex);
+            }
     
-    if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-      computeVelocity(&vehicle->right_front_motor);
-      xSemaphoreGive(MotorVelocityMutex);
+            vehicle->right_front_motor.current_position = readEncoder(&vehicle->right_front_motor.encoder) * vehicle->right_front_motor.distancePerTick * vehicle->right_front_motor.direction;
+    
+            if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
+                computeVelocity(&vehicle->right_front_motor);
+                xSemaphoreGive(MotorVelocityMutex);
+            }
+            if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
+                motor_step(&vehicle->right_front_motor);
+                xSemaphoreGive(MotorUpdateMutex);
+            }
+        }
     }
-    if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
-      motor_step(&vehicle->right_front_motor);
-      xSemaphoreGive(MotorUpdateMutex);
-    }
-  
-  }
 }
 ////////////////////////// END OF MOTOR CONTROL TASK ////////////////////////////////////////
 

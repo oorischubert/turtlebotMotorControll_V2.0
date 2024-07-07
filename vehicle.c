@@ -5,7 +5,7 @@
 #include "configuration.h"
 
 
-void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_motor, Vehicle_PIDs vehicle_pids) {
+void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_motor) {
     vehicle->current_state.odometry_variance.static_error = ENCODER_ERROR * ENCODER_ERROR;
     vehicle->current_state.odometry_variance.position_error.x = 0.0;
     vehicle->current_state.odometry_variance.position_error.y = 0.0;
@@ -53,18 +53,6 @@ void init_vehicle(Vehicle *vehicle, Motor left_front_motor, Motor right_front_mo
     vehicle->vehicle_width = VEHICLE_WIDTH;
     vehicle->vehicle_length = VEHICLE_LENGTH;
 }
-
-
-void init_vehicle_pids(Vehicle_PIDs *vehicle_pids , VEL_PID velocity_pid_x ,  VEL_PID velocity_pid_y, VEL_PID velocity_pid_angular , POS_PID pos_pid_x , POS_PID pos_pid_y , POS_PID pos_pid_angular) {
-    vehicle_pids->velocity_pid_x = velocity_pid_x;
-    vehicle_pids->velocity_pid_y = velocity_pid_y;
-    vehicle_pids->velocity_pid_angular = velocity_pid_angular;
-
-    vehicle_pids->pos_pid_x = pos_pid_x;
-    vehicle_pids->pos_pid_y = pos_pid_y;
-    vehicle_pids->pos_pid_angular = pos_pid_angular;
-}
-
 
 void compute_odometry_from_encoders(Vehicle *vehicle) {
     vehicle->last_state = vehicle->current_state;
@@ -122,10 +110,6 @@ void translate_twist_to_motor_commands(Vehicle *vehicle) {
     vehicle->right_front_motor.desired_velocity = (1.0 / r) * (v_x + (wheel_base / 2.0) * v_angular);
 }
 
-
-
-
-
 void compute_variance_from_encoders(Vehicle *vehicle) {
     // Calculate the differences between current and last odometry states
     float x_difference = vehicle->current_state.position.x - vehicle->last_state.position.x;
@@ -143,14 +127,4 @@ void compute_variance_from_encoders(Vehicle *vehicle) {
     vehicle->current_state.odometry_variance.velocity_error.y += vehicle->current_state.odometry_variance.static_error * velocity_y_difference;
     vehicle->current_state.odometry_variance.velocity_error.angular += vehicle->current_state.odometry_variance.static_error * angular_velocity_difference;
 }
-
-
-void vehicle_step(Vehicle *vehicle) {
-    compute_odometry_from_encoders(vehicle);
-    vehicle->signal_state.velocity.x = vel_pid_step(&vehicle->vehicle_pids.velocity_pid_x, vehicle->desired_state.velocity.x, vehicle->current_state.velocity.x);
-    vehicle->signal_state.velocity.y = vel_pid_step(&vehicle->vehicle_pids.velocity_pid_y, vehicle->desired_state.velocity.y, vehicle->current_state.velocity.y);
-    vehicle->signal_state.velocity.angular = vel_pid_step(&vehicle->vehicle_pids.velocity_pid_angular, vehicle->desired_state.velocity.angular, vehicle->current_state.velocity.angular);
-    translate_twist_to_motor_commands(vehicle);
-}
-
 

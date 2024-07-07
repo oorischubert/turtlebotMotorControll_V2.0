@@ -14,11 +14,14 @@ typedef enum {
 } ControlMode;
 
 typedef struct {
+    float velocity_buffer[SIZE_OF_VELOCITY_BUFFER];
+    int velocity_index;
+    float sum_velocity;
+    float desired_velocity; // Desired velocity
+    float current_velocity; // Current velocity based on encoder readings
     float desired_position;
     float current_position;
     float last_position;
-    float desired_velocity; // Desired velocity
-    float current_velocity; // Current velocity based on encoder readings
     ControlMode controlMode;
     L298N l298n;
     Encoder encoder;

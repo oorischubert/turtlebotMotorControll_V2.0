@@ -17,6 +17,7 @@
 // Motor configuration
 #define TICKS_PER_TURN 660
 #define WHEEL_DIAMETER 0.068  // 80 mm
+#define SIZE_OF_VELOCITY_BUFFER 10 //velocity buffer for moving average
 
 //Motor direction configuration
 
@@ -39,13 +40,13 @@
 #define POS_I_WINDUP 1000.0
 
 // Vel PID configuration
-#define VEL_KP 150.0
-#define VEL_KI 2.0
-#define VEL_KD 1.0
-#define VEL_I_WINDUP 1000.0
+#define VEL_KP 20.0
+#define VEL_KI 0.5
+#define VEL_KD 0.05
+#define VEL_I_WINDUP 100.0
 
 //vehicle dimensions
-#define VEHICLE_WIDTH 0.125 // meter
+#define VEHICLE_WIDTH 0.176 // meter
 #define VEHICLE_LENGTH 0.17 //meter
 #define WHEEL_DISTANCE 0.15 //meter
 
