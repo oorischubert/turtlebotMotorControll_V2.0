@@ -25,13 +25,11 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
       valid_data = 2;
       if (comm->RxData[2] == POSITION_MODE) {
           memcpy(&vehicle->desired_state.position.x, &comm->RxData[3], 4);
-          memcpy(&vehicle->desired_state.position.y, &comm->RxData[7], 4);
-          memcpy(&vehicle->desired_state.position.angular, &comm->RxData[11], 4);
+          memcpy(&vehicle->desired_state.position.angular, &comm->RxData[7], 4);
       }
       else if (comm->RxData[2] == VELOCITY_MODE) {
           memcpy(&vehicle->desired_state.velocity.x, &comm->RxData[3], 4);
-          memcpy(&vehicle->desired_state.velocity.y, &comm->RxData[7], 4);
-          memcpy(&vehicle->desired_state.velocity.angular, &comm->RxData[11], 4);
+          memcpy(&vehicle->desired_state.velocity.angular, &comm->RxData[7], 4);
       }
       else if (comm->RxData[2] == ODOMETRY_MODE) {
         
@@ -49,25 +47,31 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
           memcpy(&vehicle->current_state.odometry_variance.velocity_error.angular, &comm->RxData[47], 4);
       }
       else if (comm->RxData[2] == PID_MODE) {
-        //inputs for modifying the pids
-          VEL_PID newVelPID;
-          POS_PID newPosPID;
-          
-          memcpy(&newVelPID.kp, &comm->RxData[3], 4);
-          memcpy(&newVelPID.ki, &comm->RxData[7], 4);
-          memcpy(&newVelPID.kd, &comm->RxData[11], 4);
-          memcpy(&newVelPID.i_windup, &comm->RxData[15], 4);
-          memcpy(&newPosPID.kp, &comm->RxData[19], 4);
-          memcpy(&newPosPID.ki, &comm->RxData[23], 4);
-          memcpy(&newPosPID.kd, &comm->RxData[27], 4);
-          memcpy(&newPosPID.i_windup, &comm->RxData[31], 4);
+            // Directly pass values from comm->RxData to initialization functions
+            initVelPID(&vehicle->left_front_motor.vel_pid, 
+                    *(float*)&comm->RxData[3],  // kp
+                    *(float*)&comm->RxData[7],  // ki
+                    *(float*)&comm->RxData[11], // kd
+                    *(float*)&comm->RxData[15]); // i_windup
 
-          initVelPID(&vehicle->left_front_motor.vel_pid, newVelPID.kp, newVelPID.ki, newVelPID.kd, newVelPID.i_windup);
-          initVelPID(&vehicle->right_front_motor.vel_pid, newVelPID.kp, newVelPID.ki, newVelPID.kd, newVelPID.i_windup);
+            initVelPID(&vehicle->right_front_motor.vel_pid, 
+                    *(float*)&comm->RxData[3],  // kp
+                    *(float*)&comm->RxData[7],  // ki
+                    *(float*)&comm->RxData[11], // kd
+                    *(float*)&comm->RxData[15]); // i_windup
 
-          initPosPID(&vehicle->left_front_motor.pos_pid, newPosPID.kp, newPosPID.ki, newPosPID.kd, newPosPID.i_windup);
-          initPosPID(&vehicle->right_front_motor.pos_pid, newPosPID.kp, newPosPID.ki, newPosPID.kd, newPosPID.i_windup);
-      }
+            initPosPID(&vehicle->left_front_motor.pos_pid, 
+                    *(float*)&comm->RxData[19], // kp
+                    *(float*)&comm->RxData[23], // ki
+                    *(float*)&comm->RxData[27], // kd
+                    *(float*)&comm->RxData[31]); // i_windup
+
+            initPosPID(&vehicle->right_front_motor.pos_pid, 
+                    *(float*)&comm->RxData[19], // kp
+                    *(float*)&comm->RxData[23], // ki
+                    *(float*)&comm->RxData[27], // kd
+                    *(float*)&comm->RxData[31]); // i_windup
+}
     }
     else {
         memset(comm->RxData, 0, SIZE_OF_RX_DATA);  // Clear the buffer
@@ -78,8 +82,6 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
   }
   return valid_data;
 }
-
-
 
 
 void ProcessDataToSend(CommController *comm, const Vehicle *vehicle) {

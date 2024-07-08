@@ -56,11 +56,11 @@ SemaphoreHandle_t MotorUpdateMutex;
 SemaphoreHandle_t MotorControlSemaphore;
 /////////////////////////////
 
-esp_timer_handle_t motor_timer;
+// esp_timer_handle_t motor_timer;
 
-void IRAM_ATTR onMotorTimer(void* arg) {
-    xSemaphoreGiveFromISR(MotorControlSemaphore, NULL);
-}
+// void IRAM_ATTR onMotorTimer(void* arg) {
+//     xSemaphoreGiveFromISR(MotorControlSemaphore, NULL);
+// }
 
 
 void setup() {
@@ -159,17 +159,17 @@ void setup() {
     Serial.println("CommunicationTask creation success!");
   }
 
-   // Create motor timer for MotorControlTask (500 Hz)
-    const esp_timer_create_args_t motor_timer_args = {
-        .callback = &onMotorTimer,
-        .arg = NULL,
-        .name = "motor_timer"
-    };
-    esp_timer_create(&motor_timer_args, &motor_timer);
-    esp_timer_start_periodic(motor_timer, 500); // 500 Hz
+  //  // Create motor timer for MotorControlTask (500 Hz)
+  //   const esp_timer_create_args_t motor_timer_args = {
+  //       .callback = &onMotorTimer,
+  //       .arg = NULL,
+  //       .name = "motor_timer"
+  //   };
+  //   esp_timer_create(&motor_timer_args, &motor_timer);
+  //   esp_timer_start_periodic(motor_timer, 500); // 500 Hz
 
-    // vehicle.desired_state.velocity.angular = 0.0;
-    // translate_twist_to_motor_commands(&vehicle);   
+  //   vehicle.desired_state.velocity.angular = 0.0;
+  //   translate_twist_to_motor_commands(&vehicle);   
 }
 
 void loop() {
@@ -177,33 +177,37 @@ void loop() {
 
 /////////////////////////// MOTOR CONTROL TASK ////////////////////////////////
 void motorControlTask(void * parameter) {
-    Vehicle *vehicle = (Vehicle *)parameter;
+  Vehicle *vehicle = (Vehicle *)parameter;
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(MOTOR_CONTROL_DT * 1000);
+  xLastWakeTime = xTaskGetTickCount();
+  
+  for(;;) {
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-    for(;;) {
-        if (xSemaphoreTake(MotorControlSemaphore, portMAX_DELAY)) {
-            vehicle->left_front_motor.current_position = readEncoder(&vehicle->left_front_motor.encoder) * vehicle->left_front_motor.distancePerTick * vehicle->right_front_motor.direction;
+    vehicle->left_front_motor.current_position = readEncoder(&vehicle->left_front_motor.encoder) * vehicle->left_front_motor.distancePerTick;
     
-            if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-                computeVelocity(&vehicle->left_front_motor);
-                xSemaphoreGive(MotorVelocityMutex);
-            }
-            if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
-                motor_step(&vehicle->left_front_motor);
-                xSemaphoreGive(MotorUpdateMutex);
-            }
-    
-            vehicle->right_front_motor.current_position = readEncoder(&vehicle->right_front_motor.encoder) * vehicle->right_front_motor.distancePerTick * vehicle->right_front_motor.direction;
-    
-            if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-                computeVelocity(&vehicle->right_front_motor);
-                xSemaphoreGive(MotorVelocityMutex);
-            }
-            if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
-                motor_step(&vehicle->right_front_motor);
-                xSemaphoreGive(MotorUpdateMutex);
-            }
-        }
+    if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
+      computeVelocity(&vehicle->left_front_motor);
+      xSemaphoreGive(MotorVelocityMutex);
     }
+    if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
+      motor_step(&vehicle->left_front_motor);
+      xSemaphoreGive(MotorUpdateMutex);
+    }
+  
+    vehicle->right_front_motor.current_position = readEncoder(&vehicle->right_front_motor.encoder) * vehicle->right_front_motor.distancePerTick;
+    
+    if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
+      computeVelocity(&vehicle->right_front_motor);
+      xSemaphoreGive(MotorVelocityMutex);
+    }
+    if(xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {
+      motor_step(&vehicle->right_front_motor);
+      xSemaphoreGive(MotorUpdateMutex);
+    }
+  
+  }
 }
 ////////////////////////// END OF MOTOR CONTROL TASK ////////////////////////////////////////
 

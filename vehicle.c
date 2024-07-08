@@ -104,7 +104,7 @@ void translate_twist_to_motor_commands(Vehicle *vehicle) {
     // Desired linear and angular velocities
     float v_x = vehicle->desired_state.velocity.x;
     float v_angular = vehicle->desired_state.velocity.angular;
-
+    
     // Calculating wheel angular velocities using inverse kinematics
     vehicle->left_front_motor.desired_velocity = (1.0 / r) * (v_x - (wheel_base / 2.0) * v_angular);
     vehicle->right_front_motor.desired_velocity = (1.0 / r) * (v_x + (wheel_base / 2.0) * v_angular);
