@@ -34,11 +34,22 @@ void computeVelocity(Motor *motor) {
     if (motor->current_position != motor->last_position) {
         float deltaPosition = motor->current_position - motor->last_position;
         float dt = deltaTime / 1000000.0; // Convert time difference to seconds
-        motor->current_velocity = (deltaPosition / dt) * motor->direction;
+        float new_velocity = (deltaPosition / dt) * motor->direction;
+
+        // Update the buffer with the new velocity
+        motor->sum_velocity -= motor->velocity_buffer[motor->velocity_index];
+        motor->velocity_buffer[motor->velocity_index] = new_velocity;
+        motor->sum_velocity += new_velocity;
+        
+        // Update the current velocity with the moving average
+        motor->current_velocity = motor->sum_velocity / SIZE_OF_VELOCITY_BUFFER;
+        
+        // Increment the buffer index and wrap around if necessary
+        motor->velocity_index = (motor->velocity_index + 1) % SIZE_OF_VELOCITY_BUFFER;
+
         motor->last_position = motor->current_position;
         motor->lastUpdateTime = currentTime; // Update the last update time regardless
-    } 
-
+    }
 }
 
 void updateMotor(Motor *motor) {  //updates position and velocity
@@ -64,5 +75,4 @@ void motor_step(Motor *motor) {
     if (control_signal < 0) move_backward(&motor->l298n , -control_signal);
     if (control_signal == 0) stop(&motor->l298n);
 }
-
 
