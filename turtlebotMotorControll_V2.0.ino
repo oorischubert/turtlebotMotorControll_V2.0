@@ -46,7 +46,6 @@ CommController comm;
 
 // FreeRtos objects
 TaskHandle_t MotorControlTaskHandle;
-TaskHandle_t vehicleControlTaskHandle;
 TaskHandle_t CommunicationTaskHandle;
 
 SemaphoreHandle_t vehicleDesiredStateMutex;
@@ -124,24 +123,6 @@ void setup() {
     Serial.println("MotorControlTask creation success!");
   }
 
-
-  // Creating vehicleControlTask
-  taskCreated = xTaskCreatePinnedToCore(
-    vehicleControlTask,     // Task function
-    "VehicleControlTask",   // Name of task
-    60000,                  // Stack size of task
-    &vehicle,               // Parameter of the task
-    2,                      // Priority of the task
-    &vehicleControlTaskHandle, // Task handle to keep track of created task
-    ODOMETRY_CORE);         // Core where the task should run
-
-  if (taskCreated != pdPASS) {
-      Serial.println("VehicleControlTask creation failed!");
-  }
-  else {
-    Serial.println("VehicleControlTask creation success!");
-  }
-
   // Creating communicationTask
   taskCreated = xTaskCreatePinnedToCore(
       communicationTask,          // Task function
@@ -157,19 +138,7 @@ void setup() {
   }
   else {
     Serial.println("CommunicationTask creation success!");
-  }
-
-  //  // Create motor timer for MotorControlTask (500 Hz)
-  //   const esp_timer_create_args_t motor_timer_args = {
-  //       .callback = &onMotorTimer,
-  //       .arg = NULL,
-  //       .name = "motor_timer"
-  //   };
-  //   esp_timer_create(&motor_timer_args, &motor_timer);
-  //   esp_timer_start_periodic(motor_timer, 500); // 500 Hz
-
-  //   vehicle.desired_state.velocity.angular = 0.0;
-  //   translate_twist_to_motor_commands(&vehicle);   
+  } 
 }
 
 void loop() {
@@ -184,8 +153,9 @@ void motorControlTask(void * parameter) {
   
   for(;;) {
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
-
-    vehicle->left_front_motor.current_position = readEncoder(&vehicle->left_front_motor.encoder) * vehicle->left_front_motor.distancePerTick;
+    // -1 is a bandaid fix for the encoder direction problem, must correct!!!!
+    vehicle->left_front_motor.encoder_count = -1 * readEncoder(&vehicle->left_front_motor.encoder);
+    vehicle->left_front_motor.current_position = -1 * vehicle->left_front_motor.encoder_count * vehicle->left_front_motor.distancePerTick;
     
     if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
       computeVelocity(&vehicle->left_front_motor);
@@ -195,8 +165,9 @@ void motorControlTask(void * parameter) {
       motor_step(&vehicle->left_front_motor);
       xSemaphoreGive(MotorUpdateMutex);
     }
-  
-    vehicle->right_front_motor.current_position = readEncoder(&vehicle->right_front_motor.encoder) * vehicle->right_front_motor.distancePerTick;
+    
+    vehicle->right_front_motor.encoder_count = readEncoder(&vehicle->right_front_motor.encoder);
+    vehicle->right_front_motor.current_position =  vehicle->right_front_motor.encoder_count * vehicle->right_front_motor.distancePerTick;
     
     if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
       computeVelocity(&vehicle->right_front_motor);
@@ -210,30 +181,6 @@ void motorControlTask(void * parameter) {
   }
 }
 ////////////////////////// END OF MOTOR CONTROL TASK ////////////////////////////////////////
-
-//////////////////////// VEHICLE CONTROL TASK ///////////////////////////////////////////////
-void vehicleControlTask(void * parameter) {
-  Vehicle *vehicle = (Vehicle *)parameter;
-  TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(ODOMETRY_DT * 1000);
-  xLastWakeTime = xTaskGetTickCount();
-
-  for(;;) {
-
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    
-    if(xSemaphoreTake(MotorVelocityMutex, portMAX_DELAY)) {
-      compute_odometry_from_encoders(vehicle);    
-      xSemaphoreGive(MotorVelocityMutex);
-    }
-
-    if(xSemaphoreTake(vehicleCurrentStateMutex, portMAX_DELAY)) {
-      ProcessDataToSend(&comm, vehicle);      
-      xSemaphoreGive(vehicleCurrentStateMutex);
-    } 
-  } 
-}
-////////////////////////END OF  VEHICLE CONTROL TASK ///////////////////////////////////////////////
 
 //////////////////////// COMMUNICATION TASK ///////////////////////////////////////////////
 void communicationTask(void * parameter) {
@@ -257,12 +204,16 @@ void communicationTask(void * parameter) {
         if (check == 2) {
           Serial.flush(); 
           if (xSemaphoreTake(MotorUpdateMutex, portMAX_DELAY)) {  
-              translate_twist_to_motor_commands(vehicle);
+              //translate_twist_to_motor_commands(vehicle);
               xSemaphoreGive(MotorUpdateMutex);
           }
         }
 
     }
+    if(xSemaphoreTake(vehicleCurrentStateMutex, portMAX_DELAY)) {
+      ProcessDataToSend(&comm, vehicle);      
+      xSemaphoreGive(vehicleCurrentStateMutex);
+    } 
   }
 }
 ////////////////////////END OF COMMUNICATION TASK ///////////////////////////////////////////////

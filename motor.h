@@ -27,6 +27,7 @@ typedef struct {
     Encoder encoder;
     POS_PID pos_pid;
     VEL_PID vel_pid;
+    int64_t encoder_count;
     int ticksPerTurn;
     float wheelDiameter;
     float distancePerTick;
