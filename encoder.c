@@ -13,3 +13,7 @@ void initEncoder(Encoder *enc, int encoderPinA, int encoderPinB) {
 int readEncoder(Encoder *enc) {
   return getEncoderCount(enc->instance);
 }
+
+int clearEncoder(Encoder *enc) {
+  return clearCount(enc->instance);
+}

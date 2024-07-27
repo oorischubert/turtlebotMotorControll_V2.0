@@ -16,6 +16,7 @@ extern "C" {
 // Function prototypes
 void initEncoder(Encoder *enc, int encoderPinA, int encoderPinB);
 int readEncoder(Encoder *enc);
+int clearEncoder(Encoder *enc);
 
 #ifdef __cplusplus
 }

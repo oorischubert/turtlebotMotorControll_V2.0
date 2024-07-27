@@ -24,8 +24,10 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
     if (comm->RxData[SIZE_OF_RX_DATA - 2] == checksum) {  //passed all integrity checks
       valid_data = 2;
       if (comm->RxData[2] == RESET_ENCODERS) {
-           clearCount(&vehicle->left_front_motor.encoder.instance);
-           clearCount(&vehicle->right_front_motor.encoder.instance);
+
+           clearEncoder(&vehicle->left_front_motor.encoder);
+           clearEncoder(&vehicle->right_front_motor.encoder);
+           
        }
       else if (comm->RxData[2] == VELOCITY_MODE) {
           memcpy(&vehicle->left_front_motor.desired_velocity, &comm->RxData[3], 4);
