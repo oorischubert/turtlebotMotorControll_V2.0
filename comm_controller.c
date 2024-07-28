@@ -46,18 +46,6 @@ int receiveData(CommController *comm, Vehicle *vehicle) {
                     *(float*)&comm->RxData[7],  // ki
                     *(float*)&comm->RxData[11], // kd
                     *(float*)&comm->RxData[15]); // i_windup
-
-            initPosPID(&vehicle->left_front_motor.pos_pid, 
-                    *(float*)&comm->RxData[19], // kp
-                    *(float*)&comm->RxData[23], // ki
-                    *(float*)&comm->RxData[27], // kd
-                    *(float*)&comm->RxData[31]); // i_windup
-
-            initPosPID(&vehicle->right_front_motor.pos_pid, 
-                    *(float*)&comm->RxData[19], // kp
-                    *(float*)&comm->RxData[23], // ki
-                    *(float*)&comm->RxData[27], // kd
-                    *(float*)&comm->RxData[31]); // i_windup
 }
     }
     else {
