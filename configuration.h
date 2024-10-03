@@ -15,7 +15,7 @@
 #define ENCODER_ERROR 0.1
 
 // Motor configuration
-#define TICKS_PER_TURN 660
+#define TICKS_PER_TURN 410 //660
 #define WHEEL_DIAMETER 0.068  // 68 mm
 #define SIZE_OF_VELOCITY_BUFFER 10 //velocity buffer for moving average
 #define ANGULAR_SCALE_FACTOR 0.0
